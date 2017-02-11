@@ -46,8 +46,8 @@ CLOSE
 END
 ```
 or the following Arexx
-
-`/* receive.rexx
+```ARexx
+/* receive.rexx
 ** Written by Wolfgang Stoeggl (1998, 2004) */
 say 'Filename?'; pull file
 say 'Bytes?'; pull size
@@ -67,4 +67,27 @@ end
 say 'Received file: 'file''
 say 'Filelength = 'lof' bytes'
 close('1'); close('2')
-exit`
+exit
+```
+
+In both programs the basic idea is that you provide a filename and the file's size for the amiga side to know how many bytes to pull and what to name the file.  Keep in mind you'll need to write one of the above code (depending on your workbench version) to transfer the **sr** executable from pc to amiga.
+
+Now, **sr** (still work in progress) comes with another program on the pc side (linux) **sendami**.  The idea is that *sendami* sends a special header before the actual file that define both the filename and the filesize.
+
+So, on amiga side you type
+
+> sr
+
+and on the linux side you type
+
+> sendami file >/dev/ttyUSB0
+
+You may need to tune the baud number in sr.c for your amiga.  (I'll make it an argument soon)
+
+## Compiling ##
+
+Should be as easy as 
+
+> make
+
+You may need to edit Makefile to alter a path or two.
