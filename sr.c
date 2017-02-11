@@ -23,6 +23,32 @@ int chkabort(void) { return(0); }  /* really */
 unsigned char SerialReadBuffer[READ_BUFFER_SIZE]; /* Reserve SIZE bytes storage */
 char fname[80];
 
+#define isnum(x) (x>='0' && x<='9')
+
+int nextargisnum(int i, char **argv, int argc, char c) {
+  if ((i+1) >= argc) return 0;
+  ++i;
+
+  if (argv[i][0] == '-') {
+    Printf("Numeric argument expected after the '-%lc' switch\n", c);
+    return 0;
+  }
+
+  int j=0;
+  while(isnum(argv[i][j]))
+        ++j;
+  if (argv[i][j]!='\0') {
+    Printf("Numeric argument expected after the '-%lc' switch\n", c);
+    return 0;
+  }
+  return 1;
+}
+
+
+void print_usage(char *prg) {
+  Printf("Usage: %s [-b baudrate]\n", prg);
+}
+
 int main(int argc, char **argv) {
   struct MsgPort *SerialMP;       /* pointer to our message port */
   struct IOExtSer *SerialIO;      /* pointer to our IORequest */
@@ -33,6 +59,27 @@ int main(int argc, char **argv) {
   #ifdef USECRC
   uLong crc;
   #endif
+  int baudrate = 31250;
+  int argi = 1;
+
+  while ( argv[argi][0] == '-' ) {
+    switch (argv[argi][1]) {
+      case 'b':
+        if (nextargisnum(argi, argv, argc, 'b')) {
+          baudrate = atoi(argv[argi+1]);
+          ++argi;
+        } else {
+          return 5;
+        }
+        break;
+      default:
+        print_usage(argv[0]); 
+        return 5;
+    }
+    ++argi;
+    if (argi >= argc)
+      break;
+  }
 
   /* Create the message port */
   if (SerialMP=CreateMsgPort()) {
@@ -47,16 +94,29 @@ int main(int argc, char **argv) {
                    SIGBREAKF_CTRL_F|
                    1L << SerialMP->mp_SigBit;
 
+
+        /* Device is open */                         /* DoIO - demonstrates synchronous */
+        SerialIO->IOSer.io_Command  = SDCMD_QUERY;   /* device use, returns error or 0. */
+        if (DoIO((struct IORequest *)SerialIO))
+          Printf("Query  failed. Error - %ld\n",SerialIO->IOSer.io_Error);
+        else {
+          /* Print serial device status - see include file for meaning */
+          /* Note that with DoIO, the Wait and GetMsg are done by Exec */
+          Printf("Serial device status: $%lx\nUnread chars: %ld Baud: %ld\n\n",
+                 SerialIO->io_Status,
+                 SerialIO->IOSer.io_Actual,
+                 SerialIO->io_Baud);
+        }
+        
         SerialIO->io_StopBits = 1;
         SerialIO->io_RBufLen = 4096;
         SerialIO->io_ReadLen = SerialIO->io_WriteLen = 8;
         SerialIO->io_SerFlags      &= ~SERF_PARTY_ON; /* set parity off */
         SerialIO->io_SerFlags      |= SERF_XDISABLED; /* set xON/xOFF disabled */
-        SerialIO->io_Baud           = 31250;           /* set baud */
+        SerialIO->io_Baud           = baudrate;           /* set baud */
         SerialIO->IOSer.io_Command  = SDCMD_SETPARAMS;/* Set params command */
         if (DoIO((struct IORequest *)SerialIO))
           Printf("Error setting parameters!\n");
-
 
         SerialIO->IOSer.io_Command = CMD_CLEAR;
         DoIO((struct IORequest *)SerialIO);
@@ -64,6 +124,23 @@ int main(int argc, char **argv) {
         if (SerialIO->IOSer.io_Error) {
           Printf("Clear error: #%ld\n", (int)SerialIO->IOSer.io_Error);
         }
+
+
+
+        /* Device is open */                         /* DoIO - demonstrates synchronous */
+        SerialIO->IOSer.io_Command  = SDCMD_QUERY;   /* device use, returns error or 0. */
+        if (DoIO((struct IORequest *)SerialIO))
+          Printf("Query  failed. Error - %ld\n",SerialIO->IOSer.io_Error);
+        else {
+          /* Print serial device status - see include file for meaning */
+          /* Note that with DoIO, the Wait and GetMsg are done by Exec */
+          Printf("Serial device status: $%lx\nUnread chars: %ld Baud: %ld\n\n",
+                 SerialIO->io_Status,
+                 SerialIO->IOSer.io_Actual,
+                 SerialIO->io_Baud);
+        }
+        
+        
 
         SerialIO->IOSer.io_Command  = CMD_READ;
         SerialIO->IOSer.io_Length   = READ_BUFFER_SIZE;
@@ -145,14 +222,16 @@ int main(int argc, char **argv) {
           }
         }
 
-        if (sum != filesize)
-          Printf("Something went wrong\n");
-        else
+        if (sum != filesize) {
+          if (!(SIGBREAKF_CTRL_C & Temp))
+            Printf("Something went wrong\n");
+        } else {
           #ifdef USECRC
           Printf("\n(%lx)\n",crc);
           #else
           Printf("\n");
           #endif
+        }
         AbortIO((struct IORequest *)SerialIO);
         /* Ask device to abort request, if pending */
         WaitIO((struct IORequest *)SerialIO);

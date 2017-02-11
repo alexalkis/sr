@@ -91,3 +91,9 @@ Should be as easy as
 > make
 
 You may need to edit Makefile to alter a path or two.
+
+### Linux ###
+The *sendami* will probably open the serial device at some point (code-wise) so the redirection would be unnecessary.  Until then I am not sure if 
+> stty 9600 -parenb cs8 crtscts -ixon -ixoff raw iutf8 -F /dev/ttyWhatever
+
+is needed.
