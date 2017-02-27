@@ -8,7 +8,7 @@ HCFLAGS= -Wall
 all: sr sendami
 
 sr: sr.c
-	$(CC) $(CFLAGS) -o sr sr.c -lz
+	$(CC) $(CFLAGS) -o sr sr.c -lm
 	ls -l sr
 
 sendami: sendami.c

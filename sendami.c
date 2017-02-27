@@ -12,9 +12,9 @@ void writeHeader(char *str, unsigned int n) {
   char buf[1024];
   unsigned char filelen[4];
   unsigned char *s = filelen;
-  
+
   unsigned char len = (unsigned char) strlen(str);
-  assert(strlen(str)<256);
+  assert(strlen(str) < 256);
   *s++ = (n & 0xFF000000) >> 24;
   *s++ = (n & 0x00FF0000) >> 16;
   *s++ = (n & 0x0000FF00) >>  8;
@@ -26,17 +26,18 @@ void writeHeader(char *str, unsigned int n) {
 int main(int argc, char *argv[]) {
   int file;
   unsigned char buf[1024];
-  
-  if (argc!=2) {
-    fprintf(stderr, "Usage: %s file [>/serial-device/connected-to-amiga]\n", argv[0]);
+
+  if (argc != 2) {
+    fprintf(stderr,
+            "Usage: %s file [>/serial-device/connected-to-amiga]\n", argv[0]);
     return 5;
   }
 
-  if ( (file = open(argv[1],O_RDONLY))!=-1 ) {
+  if ( (file = open(argv[1], O_RDONLY)) != -1 ) {
     int size = lseek(file, 0, SEEK_END);
     lseek(file, 0, SEEK_SET);
     fprintf(stderr, "size: %d\n", size);
-    int bytesread=0;
+    int bytesread = 0;
     int curr;
     writeHeader(argv[1], size);
     uLong crc = crc32(0L, Z_NULL, 0);
@@ -45,12 +46,12 @@ int main(int argc, char *argv[]) {
       write(1,  buf, curr);
       bytesread += curr;
     }
-    fprintf(stderr, "Read/write %d bytes (%X).\n", bytesread, (unsigned int)crc);
-
-      
+    fprintf(stderr,
+            "Read/write %d bytes (%X).\n", bytesread, (unsigned int)crc);
   } else {
-    fprintf(stderr, "%s error: Can't open file \"%s\"\n", argv[0], argv[1]);
+    fprintf(stderr,
+            "%s error: Can't open file \"%s\"\n", argv[0], argv[1]);
     return 20;
-  } 
+  }
   return 0;
 }
