@@ -93,7 +93,7 @@ int main(int argc, char **argv) {
 #ifdef USECRC
   uLong crc;
 #endif
-  int baudrate = 31250;
+  int baudrate = 19600;
   int argi = 1;
 
   while ( argv[argi][0] == '-' ) {
@@ -263,6 +263,8 @@ int main(int argc, char **argv) {
               printf("\n%ld bytes received in %ld seconds (%ld ticks).\n", filesize, seconds, ticks);
               Close(f);
               break;
+            } else {
+              fflush(stdout);
             }
 
             SerialIO->IOSer.io_Length   = -1;
