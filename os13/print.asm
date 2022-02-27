@@ -67,4 +67,4 @@ _mysprintf:	; ( ostring, format, {values} )
 
 		movem.l (sp)+,a2/a3/a6
 		rts
-dosname:	dc.b "dos.library",0
+;dosname:	dc.b "dos.library",0
