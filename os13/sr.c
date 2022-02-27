@@ -5,8 +5,13 @@
 #include <exec/io.h>
 #include <exec/memory.h>
 #include <exec/types.h>
+#ifdef REALBUILD
 #include <proto/dos.h>
 #include <proto/exec.h>
+#else
+#include <clib/dos_protos.h>
+#include <clib/exec_protos.h>
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>

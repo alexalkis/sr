@@ -3,7 +3,7 @@
         include <lvo/exec_lib.i>
         include <lvo/dos_lib.i>
 
-
+        XREF    _DOSBase
 	XDEF	_myprintf
 	
 MPIB = 512
@@ -18,10 +18,11 @@ _myprintf:
         JSRLIB  RawDoFmt
 
 
-        moveq   #0,d0
-        lea.l   dosname,a1
-        JSRLIB  OpenLibrary 
-        move.l  d0,a6
+        ; moveq   #0,d0
+        ; lea.l   dosname,a1
+        ; JSRLIB  OpenLibrary 
+        ; move.l  d0,a6
+        move.l  _DOSBase,a6
         JSRLIB  Output
         move.l  d0,d1                   ;file to write to (Output())
 

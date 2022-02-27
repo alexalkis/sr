@@ -2,7 +2,7 @@ GIT_VERSION := $(shell git describe --abbrev=4 --dirty --always --tags)
 ARC=/usr/local/amiga/bin/lha
 CC=m68k-amigaos-gcc
 HCC=gcc
-CFLAGS = -s -noixemul -Os -DREALBUILD -DUSECRC# -DGITVERSION=\"$(GIT_VERSION)\"
+CFLAGS = -s -noixemul -Os -DREALBUILD# -DGITVERSION=\"$(GIT_VERSION)\"
 HCFLAGS= -Wall
 
 all: sr sendami
