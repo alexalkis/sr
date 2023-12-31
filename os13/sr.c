@@ -27,15 +27,13 @@ int chkabort(void) { return (0); } /* really */
 #endif
 
 #define READ_BUFFER_SIZE 4096
-unsigned char
-    SerialReadBuffer[READ_BUFFER_SIZE]; /* Reserve SIZE bytes storage */
+unsigned char SerialReadBuffer[READ_BUFFER_SIZE]; /* Reserve SIZE bytes storage */
 char fname[80];
 
 #define isnum(x) (x >= '0' && x <= '9')
 
 int nextargisnum(int i, char **argv, int argc, char c) {
-  if ((i + 1) >= argc)
-    return 0;
+  if ((i + 1) >= argc) return 0;
   ++i;
 
   if (argv[i][0] == '-') {
@@ -44,8 +42,7 @@ int nextargisnum(int i, char **argv, int argc, char c) {
   }
 
   int j = 0;
-  while (isnum(argv[i][j]))
-    ++j;
+  while (isnum(argv[i][j])) ++j;
   if (argv[i][j] != '\0') {
     printf("Numeric argument expected after the '-%lc' switch\n", c);
     return 0;
@@ -53,9 +50,7 @@ int nextargisnum(int i, char **argv, int argc, char c) {
   return 1;
 }
 
-void print_usage(char *prg) {
-  printf("Usage: %s [-b baudrate] [-p priority]\n", prg);
-}
+void print_usage(char *prg) { printf("Usage: %s [-b baudrate] [-p priority]\n", prg); }
 
 typedef int bool;
 
@@ -67,8 +62,7 @@ static const char *eta_to_human_short(int secs, bool condensed) {
   /* Trivial optimization.  create_image can call us every 200 msecs
      (see bar_update) for fast downloads, but ETA will only change
      once per 900 msecs.  */
-  if (secs == last)
-    return buf;
+  if (secs == last) return buf;
   last = secs;
 
   if (secs < 100)
@@ -102,67 +96,61 @@ int main(int argc, char **argv) {
 
   while (argv[argi][0] == '-') {
     switch (argv[argi][1]) {
-    case 'b':
-      if (nextargisnum(argi, argv, argc, 'b')) {
-        baudrate = atoi(argv[argi + 1]);
-        ++argi;
-      } else {
+      case 'b':
+        if (nextargisnum(argi, argv, argc, 'b')) {
+          baudrate = atoi(argv[argi + 1]);
+          ++argi;
+        } else {
+          return 5;
+        }
+        break;
+      case 'p':
+        if (nextargisnum(argi, argv, argc, 'p')) {
+          priority = atoi(argv[argi + 1]);
+          ++argi;
+        } else {
+          return 5;
+        }
+        break;
+      default:
+        print_usage(argv[0]);
         return 5;
-      }
-      break;
-    case 'p':
-      if (nextargisnum(argi, argv, argc, 'p')) {
-        priority = atoi(argv[argi + 1]);
-        ++argi;
-      } else {
-        return 5;
-      }
-      break;
-    default:
-      print_usage(argv[0]);
-      return 5;
     }
     ++argi;
-    if (argi >= argc)
-      break;
+    if (argi >= argc) break;
   }
 
   SetTaskPri(FindTask(NULL), priority);
   /* Create the message port */
   if (SerialMP = CreatePort(NULL, 0)) {
     /* Create the IORequest */
-    if (SerialIO =
-            (struct IOExtSer *)CreateExtIO(SerialMP, sizeof(struct IOExtSer))) {
+    if (SerialIO = (struct IOExtSer *)CreateExtIO(SerialMP, sizeof(struct IOExtSer))) {
       /* Open the serial device */
       if (OpenDevice(SERIALNAME, 0, (struct IORequest *)SerialIO, 0L)) {
         /* Inform user that it could not be opened */
         printf("Error: %s did not open\n", SERIALNAME);
       } else {
-        WaitMask =
-            SIGBREAKF_CTRL_C | SIGBREAKF_CTRL_F | 1L << SerialMP->mp_SigBit;
+        WaitMask = SIGBREAKF_CTRL_C | SIGBREAKF_CTRL_F | 1L << SerialMP->mp_SigBit;
 
-        /* Device is open */ /* DoIO - demonstrates synchronous */
-        SerialIO->IOSer.io_Command =
-            SDCMD_QUERY; /* device use, returns error or 0. */
+        /* Device is open */                      /* DoIO - demonstrates synchronous */
+        SerialIO->IOSer.io_Command = SDCMD_QUERY; /* device use, returns error or 0. */
         if (DoIO((struct IORequest *)SerialIO))
           printf("Query  failed. Error - %ld\n", SerialIO->IOSer.io_Error);
         else {
           /* Print serial device status - see include file for meaning */
           /* Note that with DoIO, the Wait and GetMsg are done by Exec */
-          printf("Serial device status: $%lx\nUnread chars: %ld Baud: %ld\n\n",
-                 SerialIO->io_Status, SerialIO->IOSer.io_Actual,
-                 SerialIO->io_Baud);
+          printf("Serial device status: $%lx\nUnread chars: %ld Baud: %ld\n\n", SerialIO->io_Status,
+                 SerialIO->IOSer.io_Actual, SerialIO->io_Baud);
         }
 
         SerialIO->io_StopBits = 1;
         SerialIO->io_RBufLen = 4096;
         SerialIO->io_ReadLen = SerialIO->io_WriteLen = 8;
-        SerialIO->io_SerFlags &= ~SERF_PARTY_ON; /* set parity off */
-        SerialIO->io_SerFlags |= SERF_XDISABLED; /* set xON/xOFF disabled */
-        SerialIO->io_Baud = baudrate;            /* set baud */
+        SerialIO->io_SerFlags &= ~SERF_PARTY_ON;      /* set parity off */
+        SerialIO->io_SerFlags |= SERF_XDISABLED;      /* set xON/xOFF disabled */
+        SerialIO->io_Baud = baudrate;                 /* set baud */
         SerialIO->IOSer.io_Command = SDCMD_SETPARAMS; /* Set params command */
-        if (DoIO((struct IORequest *)SerialIO))
-          printf("Error setting parameters!\n");
+        if (DoIO((struct IORequest *)SerialIO)) printf("Error setting parameters!\n");
 
         SerialIO->IOSer.io_Command = CMD_CLEAR;
         DoIO((struct IORequest *)SerialIO);
@@ -171,16 +159,14 @@ int main(int argc, char **argv) {
           printf("Clear error: #%ld\n", (int)SerialIO->IOSer.io_Error);
         }
 
-        SerialIO->IOSer.io_Command =
-            SDCMD_QUERY; /* device use, returns error or 0. */
+        SerialIO->IOSer.io_Command = SDCMD_QUERY; /* device use, returns error or 0. */
         if (DoIO((struct IORequest *)SerialIO))
           printf("Query  failed. Error - %ld\n", SerialIO->IOSer.io_Error);
         else {
           /* Print serial device status - see include file for meaning */
           /* Note that with DoIO, the Wait and GetMsg are done by Exec */
-          printf("Serial device status: $%lx\nUnread chars: %ld Baud: %ld\n\n",
-                 SerialIO->io_Status, SerialIO->IOSer.io_Actual,
-                 SerialIO->io_Baud);
+          printf("Serial device status: $%lx\nUnread chars: %ld Baud: %ld\n\n", SerialIO->io_Status,
+                 SerialIO->IOSer.io_Actual, SerialIO->io_Baud);
         }
 
         SerialIO->IOSer.io_Command = CMD_READ;
@@ -196,8 +182,7 @@ int main(int argc, char **argv) {
           Temp = Wait(WaitMask);
 
           if (SIGBREAKF_CTRL_C & Temp) {
-            if (f)
-              Close(f);
+            if (f) Close(f);
             break;
           }
 
@@ -217,14 +202,13 @@ int main(int argc, char **argv) {
               }
               printf("\n");
               if (strncmp(SerialReadBuffer, "SRV1", 4)) {
-                printf(
-                    "Format not known, please use sendami from pc side...\n");
+                printf("Format not known, please use sendami from pc side...\n");
                 abort = 1;
                 continue;
               }
 
               int filenamelen = (unsigned char)SerialReadBuffer[4];
-              strcpy(fname, "foo_"); // this is for debugging, remove at release
+              strcpy(fname, "foo_");  // this is for debugging, remove at release
               strncat(fname, &SerialReadBuffer[5], filenamelen);
               f = Open(fname, MODE_NEWFILE);
               if (!f) {
@@ -234,9 +218,8 @@ int main(int argc, char **argv) {
               // printf("Filename length: %ld\n", filenamelen);
               unsigned char *fs = &SerialReadBuffer[5 + filenamelen];
               // for (pos=0; pos < 4; ++pos) printf("%lx\n", (int)fs[pos]);
-              filesize = (((unsigned int)fs[0]) << 24) |
-                         (((unsigned int)fs[1]) << 16) |
-                         (((unsigned int)fs[2]) << 8) | (((unsigned int)fs[3]));
+              filesize = (((unsigned int)fs[0]) << 24) | (((unsigned int)fs[1]) << 16) | (((unsigned int)fs[2]) << 8) |
+                         (((unsigned int)fs[3]));
               printf("Filesize incoming: %ld\n", filesize);
               sum = SerialIO->IOSer.io_Actual - (5 + filenamelen + 4);
 #ifdef USECRC
@@ -253,18 +236,16 @@ int main(int argc, char **argv) {
             }
 
             DateStamp(&endTime);
-            int ticks = (endTime.ds_Minute - startTime.ds_Minute) * 60 *
-                            TICKS_PER_SECOND +
+            int ticks = (endTime.ds_Minute - startTime.ds_Minute) * 60 * TICKS_PER_SECOND +
                         (endTime.ds_Tick - startTime.ds_Tick);
             int seconds = ticks / TICKS_PER_SECOND;
             int rem = filesize * seconds / sum - seconds;
             // printf("\nRem = %ld Ticks=%ld seconds = %ld\n", rem, ticks,
             // seconds);
-            printf("%ld/%ld bytes [%ld] %s     \r", sum, filesize,
-                   sum * TICKS_PER_SECOND / ticks, eta_to_human_short(rem, 0));
+            printf("%ld/%ld bytes [%ld] %s     \r", sum, filesize, sum * TICKS_PER_SECOND / ticks,
+                   eta_to_human_short(rem, 0));
             if (sum >= filesize) {
-              printf("\n%ld bytes received in %ld seconds (%ld ticks).\n",
-                     filesize, seconds, ticks);
+              printf("\n%ld bytes received in %ld seconds (%ld ticks).\n", filesize, seconds, ticks);
               Close(f);
               break;
             } else {
@@ -277,17 +258,14 @@ int main(int argc, char **argv) {
             DoIO((struct IORequest *)SerialIO);
 
             SerialIO->IOSer.io_Command = CMD_READ;
-            SerialIO->IOSer.io_Length = ((filesize - sum) < READ_BUFFER_SIZE)
-                                            ? filesize - sum
-                                            : READ_BUFFER_SIZE;
+            SerialIO->IOSer.io_Length = ((filesize - sum) < READ_BUFFER_SIZE) ? filesize - sum : READ_BUFFER_SIZE;
             SerialIO->IOSer.io_Data = (APTR)&SerialReadBuffer[0];
             SendIO((struct IORequest *)SerialIO);
           }
         }
 
         if (sum != filesize) {
-          if (!(SIGBREAKF_CTRL_C & Temp))
-            printf("Something went wrong\n");
+          if (!(SIGBREAKF_CTRL_C & Temp)) printf("Something went wrong\n");
         } else {
 #ifdef USECRC
           printf("\n(%lx)\n", crc);
