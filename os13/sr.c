@@ -170,7 +170,7 @@ int main(int argc, char **argv) {
         }
 
         SerialIO->IOSer.io_Command = CMD_READ;
-        SerialIO->IOSer.io_Length = READ_BUFFER_SIZE;
+        SerialIO->IOSer.io_Length = 1;  // READ_BUFFER_SIZE;
         SerialIO->IOSer.io_Data = (APTR)&SerialReadBuffer[0];
         SendIO((struct IORequest *)SerialIO);
 
@@ -192,6 +192,9 @@ int main(int argc, char **argv) {
             /* clean up and remove reply */
 
             if (!header) {
+              SerialIO->IOSer.io_Length = SerialReadBuffer[0];
+              DoIO((struct IORequest *)SerialIO);
+
               DateStamp(&startTime);
               int pos = 0;
               header = 1;
@@ -221,12 +224,18 @@ int main(int argc, char **argv) {
               filesize = (((unsigned int)fs[0]) << 24) | (((unsigned int)fs[1]) << 16) | (((unsigned int)fs[2]) << 8) |
                          (((unsigned int)fs[3]));
               printf("Filesize incoming: %ld\n", filesize);
-              sum = SerialIO->IOSer.io_Actual - (5 + filenamelen + 4);
+              // sum = SerialIO->IOSer.io_Actual - (5 + filenamelen + 4);
 #ifdef USECRC
               crc = crc32(0L, Z_NULL, 0);
-              crc = crc32(crc, &SerialReadBuffer[5 + filenamelen + 4], sum);
+              // crc = crc32(crc, &SerialReadBuffer[5 + filenamelen + 4], sum);
 #endif
-              Write(f, &SerialReadBuffer[5 + filenamelen + 4], sum);
+              // Write(f, &SerialReadBuffer[5 + filenamelen + 4], sum);
+              if (filesize >= READ_BUFFER_SIZE)
+                SerialIO->IOSer.io_Length = READ_BUFFER_SIZE;
+              else
+                SerialIO->IOSer.io_Length = filesize;
+              SendIO((struct IORequest *)SerialIO);
+              continue;
             } else {
               sum += SerialIO->IOSer.io_Actual;
 #ifdef USECRC
